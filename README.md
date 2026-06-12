@@ -39,7 +39,7 @@ The naive approach — pipe every line through an LLM — burns money on repetit
 1. **Template mining (Drain3)**: 150 identical `403` errors collapse into one cluster.
 2. **Severity gate**: only `warning` and worse get analyzed; DHCP chatter never reaches the LLM.
 3. **Annotate once, display everywhere**: an annotation is attached to the *template*, so every matching line in the dashboard shows it for free.
-4. **Two-tier models**: a cheap fast model for triage (~$0.0003/call), a stronger one for the daily digest (~$0.005/call).
+4. **Two-tier models**: a cheap fast model for triage (≈$0.0003/call), a stronger one for the daily digest (≈$0.005/call).
 
 Real-world cost for a home router: **under $0.50/month**.
 
