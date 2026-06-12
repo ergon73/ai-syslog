@@ -1,0 +1,14 @@
+# Secrets — never commit
+.env
+
+# Runtime data: contains real network logs (IPs, MACs, hostnames)
+data/
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+
+# IDE
+.idea/
+.vscode/
