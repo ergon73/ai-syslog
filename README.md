@@ -40,6 +40,7 @@ The naive approach — pipe every line through an LLM — burns money on repetit
 2. **Severity gate**: only `warning` and worse get analyzed; DHCP chatter never reaches the LLM.
 3. **Annotate once, display everywhere**: an annotation is attached to the *template*, so every matching line in the dashboard shows it for free.
 4. **Two-tier models**: a cheap fast model for triage (≈$0.0003/call), a stronger one for the daily digest (≈$0.005/call).
+5. **Mute list**: known-noise messages (Wi-Fi roaming, band steering, DHCP chatter) are filtered by regex patterns in [ignore_patterns.txt](ignore_patterns.txt) and never reach the LLM.
 
 Real-world cost for a home router: **under $0.50/month**.
 
@@ -93,8 +94,14 @@ All via `.env` (see [.env.example](.env.example)):
 | `ANALYZE_SEVERITY_THRESHOLD` | `4` | analyze severity ≤ N (4 = warning and worse) |
 | `SYSLOG_PORT` / `WEB_PORT` | `514` / `8514` | ports |
 
+### MAC vendor enrichment — no LLM needed
+
+Every MAC address in the log is resolved against a local copy of the IEEE OUI database (Wireshark `manuf`, auto-downloaded and refreshed monthly). Vendors are shown in the dashboard and injected into the LLM context. Randomized (private) MAC addresses are detected and labeled as such.
+
 ## Roadmap
 
+- [x] Noise filtering via regex mute list (`ignore_patterns.txt`)
+- [x] MAC vendor enrichment from offline IEEE OUI database
 - [ ] Backfill gaps via the router's REST API on startup (for collectors that aren't always on)
 - [ ] Read-only diagnostics: let the analyzer query the router (interface states, routes) while investigating an error
 - [ ] Tiered auto-remediation: whitelist of reversible, idempotent fixes with audit log and kill switch

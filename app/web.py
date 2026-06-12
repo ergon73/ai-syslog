@@ -3,7 +3,7 @@ import asyncio
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse, PlainTextResponse
 
-from . import analyzer, db
+from . import analyzer, db, oui
 
 app = FastAPI(title="ai-syslog")
 
@@ -23,6 +23,7 @@ PAGE = """<!doctype html>
   .ai { background:#16202e; color:#9ecbff; font-size:12px; }
   .ai b { color:#e3b341; }
   .ts { white-space:nowrap; color:#6e7681; }
+  .vendors { color:#6e7681; font-size:11px; margin-top:2px; }
   #digest { white-space:pre-wrap; padding:16px 20px; background:#141a26; margin:0; display:none; }
 </style></head>
 <body>
@@ -38,13 +39,20 @@ async function refresh() {
   const r = await fetch('/api/logs'); const rows = await r.json();
   document.getElementById('stat').textContent = rows.length + ' последних строк';
   const t = document.getElementById('logs');
+  let lastSummary = null;
   t.innerHTML = rows.map(x => {
+    const vendors = (x.macs||[]).map(m => `${m.mac} — ${m.vendor}`).join(' · ');
     let html = `<tr class="sev-${x.severity}">`
       + `<td class="ts">${(x.received_at||'').replace('T',' ').slice(0,19)}</td>`
-      + `<td>${x.tag||''}</td><td>${esc(x.message)}</td></tr>`;
-    if (x.summary) html += `<tr><td></td><td class="ai">AI [${x.severity_assessment}]</td>`
-      + `<td class="ai"><b>${esc(x.summary)}</b><br>Причина: ${esc(x.probable_cause||'')}`
-      + `<br>Рекомендация: ${esc(x.recommendation||'')}</td></tr>`;
+      + `<td>${x.tag||''}</td><td>${esc(x.message)}`
+      + (vendors ? `<div class="vendors">${esc(vendors)}</div>` : '')
+      + `</td></tr>`;
+    if (x.summary && x.summary !== lastSummary) {
+      html += `<tr><td></td><td class="ai">AI [${x.severity_assessment}]</td>`
+        + `<td class="ai"><b>${esc(x.summary)}</b><br>Причина: ${esc(x.probable_cause||'')}`
+        + `<br>Рекомендация: ${esc(x.recommendation||'')}</td></tr>`;
+    }
+    lastSummary = x.summary || null;
     return html;
   }).join('');
 }
@@ -67,7 +75,12 @@ def index():
 @app.get("/api/logs")
 def api_logs():
     rows = db.fetch_recent_logs()
-    return [dict(r) for r in rows]
+    result = []
+    for r in rows:
+        d = dict(r)
+        d["macs"] = oui.enrich(d["message"])
+        result.append(d)
+    return result
 
 
 @app.get("/api/digest", response_class=PlainTextResponse)

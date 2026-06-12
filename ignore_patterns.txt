@@ -1,0 +1,20 @@
+# Фильтр LLM-анализа: сообщения, совпавшие с любым шаблоном (regex,
+# без учёта регистра), НЕ отправляются в LLM. В лог и шаблоны они
+# попадают как обычно. Одна строка — один шаблон, # — комментарий.
+
+# Wi-Fi band steering: штатная работа, клиенты вправе отказываться
+band steering
+
+# Роуминг между точками/диапазонами (FT) — норма для Wi-Fi-системы
+BSS transition management
+FT roam
+FT authenticated
+
+# Подключения клиентов — шум
+had associated
+set key done
+
+# DHCP-обмен — шум (и так ниже порога severity, но на всякий случай)
+DHCP(DISCOVER|REQUEST|OFFER|ACK)
+sending ACK of
+making OFFER of

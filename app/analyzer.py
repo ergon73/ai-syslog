@@ -1,10 +1,11 @@
 import asyncio
 import logging
+import re
 from typing import Literal
 
 from pydantic import BaseModel
 
-from . import config, db, llm, mining
+from . import config, db, llm, mining, oui
 
 log = logging.getLogger("analyzer")
 
@@ -35,16 +36,47 @@ SYSTEM_PROMPT = f"""Ты — эксперт по сетевому оборудо
 - recommendation: что сделать администратору; если делать ничего не нужно, так и скажи;
 - confidence: насколько ты уверен в разборе.
 
+Важно: твой разбор будет показан под ВСЕМИ сообщениями этого же типа (с другими
+MAC/IP/кодами), поэтому пиши обобщённо — описывай суть события и класс причин,
+не привязывайся к конкретному MAC-адресу или коду из примера, если суть не в них.
+
 Будь конкретным и кратким. Не выдумывай факты, которых нет в логе."""
+
+
+def _load_ignore_patterns() -> list[re.Pattern]:
+    patterns = []
+    try:
+        with open(config.IGNORE_PATTERNS_FILE, encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith("#"):
+                    patterns.append(re.compile(line, re.IGNORECASE))
+    except FileNotFoundError:
+        pass
+    return patterns
+
+
+IGNORE_PATTERNS = _load_ignore_patterns()
+
+
+def is_ignored(message: str) -> bool:
+    return any(p.search(message) for p in IGNORE_PATTERNS)
 
 def triage_with_llm(row, context_rows) -> dict | None:
     context = "\n".join(
         f"{r['received_at']} {r['tag'] or '-'}: {r['message']}" for r in context_rows
     )
     sev = SEVERITY_NAMES.get(row["severity"], "?")
+    macs = oui.enrich(row["message"])
+    mac_info = ""
+    if macs:
+        mac_info = "\n\nВендоры MAC-адресов из сообщения:\n" + "\n".join(
+            f"- {m['mac']}: {m['vendor']}" for m in macs
+        )
     user_msg = (
         f"Контекст (предыдущие строки журнала):\n{context or '(пусто)'}\n\n"
         f"Анализируемое сообщение [{sev}] {row['tag'] or '-'}:\n{row['message']}"
+        f"{mac_info}"
     )
     return llm.triage(SYSTEM_PROMPT, user_msg, TriageResult)
 
@@ -60,6 +92,7 @@ def process_batch() -> int:
             row["severity"] is not None
             and row["severity"] <= config.ANALYZE_SEVERITY_THRESHOLD
             and not db.template_has_annotation(template_id)
+            and not is_ignored(row["message"])
         )
         if should_analyze:
             if llm.configured():
