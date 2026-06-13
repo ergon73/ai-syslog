@@ -3,7 +3,7 @@ import asyncio
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse, PlainTextResponse
 
-from . import analyzer, db, oui
+from . import analyzer, db, hosts
 
 app = FastAPI(title="ai-syslog")
 
@@ -41,7 +41,9 @@ async function refresh() {
   const t = document.getElementById('logs');
   let lastSummary = null;
   t.innerHTML = rows.map(x => {
-    const vendors = (x.macs||[]).map(m => `${m.mac} — ${m.vendor}`).join(' · ');
+    const vendors = (x.macs||[]).map(m =>
+      m.token + (m.name ? ` = ${m.name}` : '') + (m.vendor ? ` (${m.vendor})` : '')
+    ).join(' · ');
     let html = `<tr class="sev-${x.severity}">`
       + `<td class="ts">${(x.received_at||'').replace('T',' ').slice(0,19)}</td>`
       + `<td>${x.tag||''}</td><td>${esc(x.message)}`
@@ -78,7 +80,7 @@ def api_logs():
     result = []
     for r in rows:
         d = dict(r)
-        d["macs"] = oui.enrich(d["message"])
+        d["macs"] = hosts.enrich(d["message"])
         result.append(d)
     return result
 

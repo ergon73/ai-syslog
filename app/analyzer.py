@@ -5,7 +5,7 @@ from typing import Literal
 
 from pydantic import BaseModel
 
-from . import config, db, llm, mining, oui
+from . import config, db, hosts, llm, mining
 
 log = logging.getLogger("analyzer")
 
@@ -67,16 +67,16 @@ def triage_with_llm(row, context_rows) -> dict | None:
         f"{r['received_at']} {r['tag'] or '-'}: {r['message']}" for r in context_rows
     )
     sev = SEVERITY_NAMES.get(row["severity"], "?")
-    macs = oui.enrich(row["message"])
-    mac_info = ""
-    if macs:
-        mac_info = "\n\nВендоры MAC-адресов из сообщения:\n" + "\n".join(
-            f"- {m['mac']}: {m['vendor']}" for m in macs
+    entities = hosts.enrich(row["message"])
+    ent_info = ""
+    if entities:
+        ent_info = "\n\nУстройства из сообщения (имя по DHCP/карте, вендор по MAC):\n" + "\n".join(
+            f"- {hosts.format_line(e)}" for e in entities
         )
     user_msg = (
         f"Контекст (предыдущие строки журнала):\n{context or '(пусто)'}\n\n"
         f"Анализируемое сообщение [{sev}] {row['tag'] or '-'}:\n{row['message']}"
-        f"{mac_info}"
+        f"{ent_info}"
     )
     return llm.triage(SYSTEM_PROMPT, user_msg, TriageResult)
 

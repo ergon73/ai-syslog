@@ -94,14 +94,18 @@ All via `.env` (see [.env.example](.env.example)):
 | `ANALYZE_SEVERITY_THRESHOLD` | `4` | analyze severity ≤ N (4 = warning and worse) |
 | `SYSLOG_PORT` / `WEB_PORT` | `514` / `8514` | ports |
 
-### MAC vendor enrichment — no LLM needed
+### Device identity enrichment — no LLM needed
 
-Every MAC address in the log is resolved against a local copy of the IEEE OUI database (Wireshark `manuf`, auto-downloaded and refreshed monthly). Vendors are shown in the dashboard and injected into the LLM context. Randomized (private) MAC addresses are detected and labeled as such.
+- **Vendor by MAC**: resolved against a local copy of the IEEE OUI database (Wireshark `manuf`, auto-downloaded and refreshed monthly). Randomized (private) MACs are detected and labeled.
+- **Name by MAC/IP**: the device-name map is **learned automatically from the router's own DHCP log lines** (`hostname "..."`) — zero config, no personal data in the repo. `IP → MAC → name` chains are resolved too. Optional `hosts.txt` (gitignored) lets you override names DHCP can't know, e.g. labeling a static IP as "the collector server".
+
+Both feed the dashboard and the LLM context, so the analyzer says *"192.168.6.70 — the ai-syslog collector laptop"* instead of guessing *"probably a Smart TV"*.
 
 ## Roadmap
 
 - [x] Noise filtering via regex mute list (`ignore_patterns.txt`)
 - [x] MAC vendor enrichment from offline IEEE OUI database
+- [x] Device naming auto-learned from DHCP logs (+ optional `hosts.txt` overrides)
 - [ ] Backfill gaps via the router's REST API on startup (for collectors that aren't always on)
 - [ ] Read-only diagnostics: let the analyzer query the router (interface states, routes) while investigating an error
 - [ ] Tiered auto-remediation: whitelist of reversible, idempotent fixes with audit log and kill switch

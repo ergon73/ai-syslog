@@ -165,6 +165,15 @@ def fetch_recent_logs(limit=300):
     ).fetchall()
 
 
+def fetch_dhcp_lines():
+    """Строки с привязками MAC↔hostname и IP↔MAC — для карты устройств."""
+    conn = get_conn()
+    return conn.execute(
+        "SELECT message FROM logs "
+        "WHERE message LIKE '%hostname \"%' OR message LIKE '%ACK of %'"
+    ).fetchall()
+
+
 def fetch_errors_since(hours: int = 24):
     conn = get_conn()
     return conn.execute(

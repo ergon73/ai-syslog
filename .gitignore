@@ -1,6 +1,9 @@
 # Secrets — never commit
 .env
 
+# Local device-name overrides (personal MACs/hostnames)
+hosts.txt
+
 # Runtime data: contains real network logs (IPs, MACs, hostnames)
 data/
 

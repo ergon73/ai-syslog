@@ -18,3 +18,7 @@ set key done
 DHCP(DISCOVER|REQUEST|OFFER|ACK)
 sending ACK of
 making OFFER of
+
+# UPnP-eventing: роутер не может доставить колбэк подписчику — безвредный шум
+upnp_event_process_notify
+remove subscriber

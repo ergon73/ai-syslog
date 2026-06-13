@@ -13,6 +13,7 @@ DB_PATH = DATA_DIR / "syslog.db"
 DRAIN_STATE_PATH = DATA_DIR / "drain3_state.bin"
 
 IGNORE_PATTERNS_FILE = BASE_DIR / "ignore_patterns.txt"
+HOSTS_FILE = BASE_DIR / "hosts.txt"
 
 SYSLOG_HOST = os.getenv("SYSLOG_HOST", "0.0.0.0")
 SYSLOG_PORT = int(os.getenv("SYSLOG_PORT", "514"))
