@@ -74,12 +74,13 @@ system log server <collector-ip>
 system configuration save
 ```
 
-Any device that speaks RFC 3164 syslog over UDP will work. On Windows, allow inbound UDP 514 from your router:
+Any device that speaks RFC 3164 syslog over UDP will work. On Windows, the firewall blocks inbound UDP 514 by default — run the one-time setup script (it self-elevates and is idempotent):
 
 ```powershell
-New-NetFirewallRule -DisplayName "ai-syslog UDP 514" -Direction Inbound `
-  -Protocol UDP -LocalPort 514 -RemoteAddress <router-ip> -Action Allow
+powershell -ExecutionPolicy Bypass -File setup.ps1
 ```
+
+This creates an inbound allow rule for UDP 514. Tighten it to your router's IP with `-RemoteAddress 192.168.6.1` if you like.
 
 ## Configuration
 
