@@ -18,6 +18,14 @@ HOSTS_FILE = BASE_DIR / "hosts.txt"
 SYSLOG_HOST = os.getenv("SYSLOG_HOST", "0.0.0.0")
 SYSLOG_PORT = int(os.getenv("SYSLOG_PORT", "514"))
 
+# Режим приёма логов:
+#   ssh  — читать файл syslog-ng с роутера по SSH (durable, без потерь). По умолчанию.
+#   udp  — старый режим: слушать UDP 514 на этой машине.
+INGEST_MODE = os.getenv("INGEST_MODE", "ssh")
+SSH_ALIAS = os.getenv("SSH_ALIAS", "keenetic")          # запись в ~/.ssh/config
+REMOTE_LOG = os.getenv("REMOTE_LOG", "/opt/var/log/router.log")
+SSH_POLL_INTERVAL = int(os.getenv("SSH_POLL_INTERVAL", "15"))
+
 WEB_HOST = os.getenv("WEB_HOST", "127.0.0.1")
 WEB_PORT = int(os.getenv("WEB_PORT", "8514"))
 

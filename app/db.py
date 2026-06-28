@@ -45,6 +45,11 @@ CREATE TABLE IF NOT EXISTS annotations (
     FOREIGN KEY (template_id) REFERENCES templates(id)
 );
 CREATE INDEX IF NOT EXISTS idx_annotations_template ON annotations(template_id);
+
+CREATE TABLE IF NOT EXISTS state (
+    key TEXT PRIMARY KEY,
+    value TEXT
+);
 """
 
 
@@ -72,6 +77,39 @@ def insert_log(host, severity, facility, tag, message, raw) -> int:
     )
     conn.commit()
     return cur.lastrowid
+
+
+def insert_log_at(received_at, host, severity, facility, tag, message, raw) -> int:
+    """Вставка строки с ЯВНЫМ временем события (из лога роутера, не now)."""
+    conn = get_conn()
+    cur = conn.execute(
+        "INSERT INTO logs (received_at, host, severity, facility, tag, message, raw)"
+        " VALUES (?, ?, ?, ?, ?, ?, ?)",
+        (received_at, host, severity, facility, tag, message, raw),
+    )
+    conn.commit()
+    return cur.lastrowid
+
+
+def get_state_int(key, default=0) -> int:
+    conn = get_conn()
+    row = conn.execute("SELECT value FROM state WHERE key = ?", (key,)).fetchone()
+    if row is None:
+        return default
+    try:
+        return int(row["value"])
+    except (ValueError, TypeError):
+        return default
+
+
+def set_state_int(key, value: int):
+    conn = get_conn()
+    conn.execute(
+        "INSERT INTO state (key, value) VALUES (?, ?) "
+        "ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+        (key, str(value)),
+    )
+    conn.commit()
 
 
 def fetch_unanalyzed(limit=200):
