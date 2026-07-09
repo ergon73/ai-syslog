@@ -1,0 +1,42 @@
+# Уровень 1: "известный шум". Строки, совпавшие с шаблоном (ERE, без учёта
+# регистра), НЕ будят LLM в реальном времени, но копятся и попадают
+# в утренний дайджест. Применяется к агрегированной строке "PROGRAM<TAB>MSG".
+
+# DoH-резолверы: отдельные неудачные попытки — шум; тренд виден в дайджесте
+curl error message: Failed to connect
+
+# WireGuard: штормы рукопожатий при недоступном пире (10-20 тыс. строк/сутки)
+wireguard: .* handshake for peer .* (retrying|giving up)
+wireguard: .* peer .* \((created|destroyed)\)?
+
+# Переподключения WireGuard-пиров (ndm): сопровождают каждый флап VPN,
+# тренд виден в дайджесте; реалтайм-алерт на каждый флап = спам
+Wireguard::Interface: .* resolved peer
+EndpointTracker: "Wireguard
+Network::Interface::(Ip|Ip6|Base): "Wireguard
+Core::System::StartupConfig: saving \(coala
+
+# DHCP-запросы клиентов: hostname нужен дайджесту, но реалтайм не требуется
+DHCP(REQUEST|DISCOVER|INFORM) received
+
+# Wi-Fi ассоциации клиентов и возрастные отключения
+had (dis)?associated
+aged-out and disassociated
+
+# Деградация DoH/DoT и её обслуживание: тренд для дайджеста
+# (важно: "MIC differs" — попытка с неверным паролем Wi-Fi — сюда НЕ входит)
+Dns::Secure::Tools: fallback to recursive DNS
+Dns::Manager: updating DNS-over-(TLS|HTTPS)
+
+# Продление собственной DHCP-аренды на аплинке
+received ACK for IP
+
+# Сброс conntrack при смене состояния интерфейсов (следствие флапов VPN)
+Netfilter::Util::Conntrack: flushed
+
+# dropbear: успешные логины с других хостов увидит дайджест;
+# неудачные попытки (bad password, exit before auth) сюда НЕ входят — они важные
+Child connection from
+Pubkey auth succeeded
+Password auth succeeded
+Exit \(root\) from <

@@ -1,0 +1,15 @@
+#!/bin/sh
+# Автозапуск picoclaw gateway (Telegram-интерфейс агента) через Entware rc.func.
+# Эталонная копия; на роутере: /opt/etc/init.d/S99picoclaw (chmod 755).
+# ENABLED=no до тех пор, пока не заполнены токены (apply-keys.sh включает).
+
+ENABLED=no
+PROCS=picoclaw
+ARGS="gateway"
+PREARGS=""
+DESC="picoclaw gateway"
+PATH=/opt/sbin:/opt/bin:/opt/usr/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+export HOME=/opt/root
+
+. /opt/etc/init.d/rc.func

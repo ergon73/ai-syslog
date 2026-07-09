@@ -1,0 +1,37 @@
+# Конфиг наблюдателя (Фаза 1). Эталонная копия; на роутере:
+#   /opt/etc/observer/observer.conf  (chmod 600 — здесь ключи!)
+# Формат: shell-переменные, файл подключается через ". observer.conf".
+
+# Ollama Cloud (ключ: https://ollama.com/settings/keys)
+OLLAMA_API_KEY=""
+OLLAMA_API_BASE="https://ollama.com/v1"
+
+# Модель реального времени (классификация батчей) и модель дайджеста.
+# Точные теги проверить: curl -H "Authorization: Bearer $KEY" https://ollama.com/v1/models
+MODEL_REALTIME="qwen3.5:397b"
+MODEL_DIGEST="deepseek-v4-flash"
+
+# WG-интерфейсы для доставки в Telegram (api.telegram.org блокируется
+# провайдером для трафика самого роутера; порядок = приоритет)
+TG_IFACES="nwg2 nwg0 nwg1"
+
+# Цепочка fallback LLM (пустой ключ = ступень выключена).
+# Ступень 2: CloseRouter — с роутера доступен напрямую, дёшев.
+# Проверка живости моделей — по их дашборду Использование: на 2026-07-09
+# апстримы Qwen и Deepseek лежали (no_available_provider), живыми были
+# gpt-5.4-mini, claude-haiku-4.5, grok-4.1-fast, glm-5.2.
+FALLBACK1_API_BASE="https://api.closerouter.dev/v1"
+FALLBACK1_MODEL="openai/gpt-5.4-mini"
+FALLBACK1_API_KEY=""
+# Ступень 3: OpenRouter — с роутера только через WG-интерфейсы.
+FALLBACK2_API_BASE="https://openrouter.ai/api/v1"
+FALLBACK2_MODEL="qwen/qwen3.5-397b-a17b"
+FALLBACK2_API_KEY=""
+
+# Telegram-бот (токен от @BotFather; chat_id = ваш user id от @userinfobot)
+TG_TOKEN=""
+TG_CHAT_ID=""
+
+# Предохранители
+LLM_MAX_PER_DAY=100        # жёсткий потолок вызовов LLM в сутки
+BATCH_MAX_CHARS=6000       # максимум символов лога в одном запросе к LLM

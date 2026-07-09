@@ -1,0 +1,30 @@
+# Уровень 0: строки, совпавшие с любым шаблоном (ERE, без учёта регистра),
+# наблюдатель не видит вообще — чистый протокольный шум без сигнала.
+# Применяется к "PROGRAM<TAB>MSG". Осторожно: что отброшено здесь,
+# не попадёт ни в реалтайм-анализ, ни в дайджест.
+
+# dropbear-сессии сборщика ai-syslog (192.168.6.70) и самого наблюдателя
+Child connection from 192\.168\.6\.70:
+Pubkey auth succeeded .* from 192\.168\.6\.70:
+Exit \(root\) from <192\.168\.6\.70:
+
+# Wi-Fi band steering и роуминг — штатная работа Wi-Fi-системы
+band steering
+BSS transition management
+FT (roam|authenticated)
+set key done
+
+# DHCP-ответы сервера (запросы клиентов оставляем — в них hostname)
+sending ACK of
+making OFFER of
+
+# UPnP-eventing: недоставленные колбэки подписчикам — безвредно
+upnp_event_process_notify
+remove subscriber
+
+# Самозапись наблюдателя: cron логирует каждый запуск заданий,
+# rc.func — старты сервисов picoclaw (иначе LLM будят собственные следы)
+^cron
+run-parts /opt/etc/cron
+Started picoclaw gateway
+Shutting down picoclaw
