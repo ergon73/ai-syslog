@@ -1,0 +1,29 @@
+#!/bin/sh
+# Автозапуск демона доверенных действий (actiond.sh).
+# Эталонная копия; на роутере: /opt/etc/init.d/S96actiond (chmod 755).
+
+DAEMON=/opt/etc/observer/actiond.sh
+PIDF=/opt/var/run/actiond.pid
+
+case "$1" in
+    start)
+        if [ -f "$PIDF" ] && kill -0 "$(cat "$PIDF")" 2>/dev/null; then
+            echo "actiond already running"; exit 0
+        fi
+        mkdir -p /opt/var/run
+        "$DAEMON" >/dev/null 2>&1 &
+        echo $! > "$PIDF"
+        echo "actiond started"
+        ;;
+    stop)
+        [ -f "$PIDF" ] && kill "$(cat "$PIDF")" 2>/dev/null
+        rm -f "$PIDF"
+        echo "actiond stopped"
+        ;;
+    restart)
+        "$0" stop; sleep 1; "$0" start
+        ;;
+    *)
+        echo "usage: $0 {start|stop|restart}"
+        ;;
+esac
