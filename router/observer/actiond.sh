@@ -19,6 +19,10 @@ mkdir -p "$REQ" "$RES"
 run_action() {
     case "$1" in
         dnsbench)
+            # сразу пометить «выполняется», чтобы агент не прочитал
+            # устаревший результат (устраняет гонку read-до-завершения)
+            echo "# RUNNING — бенчмарк DNS запущен $(date '+%F %T %Z'), готово через ~20 сек" \
+                > "$RES/dnsbench.txt"
             {
                 echo "# Бенчмарк DNS — $(date '+%F %T %Z')"
                 sh "$DIR/dnsbench.sh" 2
