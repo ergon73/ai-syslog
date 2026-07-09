@@ -74,8 +74,32 @@ sed -e 's/[0-9a-fA-F][0-9a-fA-F]\(:[0-9a-fA-F][0-9a-fA-F]\)\{5\}/MAC/g' \
 cat "$STATE/agg" >> "$STATE/day.acc"
 
 # --- уровень 1: незнакомое (не boring) -> кандидат на LLM -------------------
-cut -f2- "$STATE/agg" | grep -viE -f "$STATE/boring.re" \
-    > "$STATE/interesting" || true
+# boring-шаблоны матчатся по "PROGRAM\tMSG" (без счётчика), но в interesting
+# строки идут ЦЕЛИКОМ, со счётчиком повторов — LLM должен видеть масштаб
+# (одна ошибка пароля Wi-Fi и серия из 10 — разные вердикты).
+cut -f2- "$STATE/agg" | grep -viEn -f "$STATE/boring.re" | cut -d: -f1 \
+    > "$STATE/int.idx" || true
+awk 'NR==FNR {keep[$1]=1; next} FNR in keep' \
+    "$STATE/int.idx" "$STATE/agg" > "$STATE/interesting"
+
+# --- дедуп алертов: событие, уже показанное владельцу за окно охлаждения,
+# повторно не алертится (в day.acc и дайджест оно уже попало).
+# Хэш — по "PROGRAM\tMSG" без счётчика, чтобы серия из двух тиков не дублилась.
+HIST=$STATE/alert.hist
+now_ts=$(date +%s)
+cool=${ALERT_COOLDOWN:-10800}
+touch "$HIST"
+awk -v now="$now_ts" -v cd="$cool" '$2 >= now-cd' "$HIST" > "$HIST.new" \
+    && mv "$HIST.new" "$HIST"
+: > "$STATE/interesting.new"
+while IFS= read -r line; do
+    key=$(printf '%s' "$line" | cut -f2- | md5sum | cut -d' ' -f1)
+    if ! grep -q "^$key " "$HIST"; then
+        printf '%s\n' "$line" >> "$STATE/interesting.new"
+        echo "$key $now_ts" >> "$HIST"
+    fi
+done < "$STATE/interesting"
+mv "$STATE/interesting.new" "$STATE/interesting"
 [ -s "$STATE/interesting" ] || { save_stats; exit 0; }
 
 # --- предохранители ----------------------------------------------------------
@@ -119,6 +143,7 @@ elif [ "$important" = "true" ]; then
     esac
     tg_notify "$icon $summary
 
-$(head -c 800 "$STATE/interesting")"
+$(head -c 800 "$STATE/interesting")" || log "tg_send ПРОВАЛ: $summary"
 fi
+log "вердикт: important=$important sev=$severity: $(echo "$summary" | head -c 120)"
 save_stats

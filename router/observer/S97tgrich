@@ -1,0 +1,29 @@
+#!/bin/sh
+# Автозапуск демона rich-сообщений (richsend.sh).
+# Эталонная копия; на роутере: /opt/etc/init.d/S97tgrich (chmod 755).
+
+DAEMON=/opt/etc/observer/richsend.sh
+PIDF=/opt/var/run/richsend.pid
+
+case "$1" in
+    start)
+        if [ -f "$PIDF" ] && kill -0 "$(cat "$PIDF")" 2>/dev/null; then
+            echo "richsend already running"; exit 0
+        fi
+        mkdir -p /opt/var/run
+        "$DAEMON" >/dev/null 2>&1 &
+        echo $! > "$PIDF"
+        echo "richsend started"
+        ;;
+    stop)
+        [ -f "$PIDF" ] && kill "$(cat "$PIDF")" 2>/dev/null
+        rm -f "$PIDF"
+        echo "richsend stopped"
+        ;;
+    restart)
+        "$0" stop; sleep 1; "$0" start
+        ;;
+    *)
+        echo "usage: $0 {start|stop|restart}"
+        ;;
+esac

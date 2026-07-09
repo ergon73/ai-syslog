@@ -1,0 +1,5 @@
+# Файлы разворачиваются на роутер (BusyBox ash) — только LF, иначе CRLF
+# ломает shebang и парсинг. Держим LF в репозитории независимо от ОС.
+* text eol=lf
+*.sh text eol=lf
+S[0-9][0-9]* text eol=lf

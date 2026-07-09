@@ -16,8 +16,10 @@ EndpointTracker: "Wireguard
 Network::Interface::(Ip|Ip6|Base): "Wireguard
 Core::System::StartupConfig: saving \(coala
 
-# DHCP-запросы клиентов: hostname нужен дайджесту, но реалтайм не требуется
-DHCP(REQUEST|DISCOVER|INFORM) received
+# DHCP-продления известных клиентов — шум. НО STATE_INIT (первый запрос
+# от нового/вернувшегося устройства) НЕ глушим: это сигнал «новое устройство».
+DHCP(REQUEST|DISCOVER|INFORM) received \(STATE_(RENEWING|REBINDING|BOUND)\)
+DHCP(OFFER|ACK|NAK)
 
 # Wi-Fi ассоциации клиентов и возрастные отключения
 had (dis)?associated
