@@ -1,0 +1,66 @@
+### show/version
+{
+  "release": "5.01.C.0.0-1",
+  "sandbox": "draft",
+  "title": "5.1.0",
+  "arch": "aarch64",
+  "ndm": {
+    "exact": "0-01b7c9b41d",
+    "cdate": "17 Jun 2026"
+  },
+  "bsp": {
+    "exact": "0-703c4c445b",
+    "cdate": "17 Jun 2026"
+  },
+  "ndw": {
+    "features": "wifi_button,wifi5ghz,usb_3_conf,usb_3_first,led_control,vht2ghz,bf2ghz,mimo5ghz,atf2ghz,atf5ghz,dual_image,wifi_ft,wpa3,link_agg,hwnat,hwnat_mib,cable_diag,sfp",
+    "components": "base,cloudcontrol,corewireless,ddns,dhcpd,dns-filter,dns-https,dns-tls,dot1x,easyconfig,exfat,ext,ext-utils,fat,hfsplus,igmp,ip6,l2tp,lang-en,lang-ru,mdns,miniupnpd,mws,nathelper-ftp,nathelper-h323,nathelper-pptp,nathelper-rtsp,nathelper-sip,ndmp,ndns,ntfs,opkg,pingcheck,ppe,pppoe,pptp,ssh,storage,trafficcontrol,tsmb,usb,usblte,usbmodem,usbnet,usbqmi,webdav,wireguard"
+  },
+  "ndw3": {
+    "version": "5.1.16.4"
+  },
+  "ndw4": {
+    "version": "5.1.C.0.1"
+  },
+  "manufacturer": "Keenetic Ltd.",
+  "vendor": "Keenetic",
+  "series": "KN",
+  "model": "Peak (KN-2710)",
+  "hw_version": "10278000",
+  "hw_type": "router",
+  "hw_id": "KN-2710",
+  "device": "Peak",
+  "consent": "EA",
+  "region": "EA",
+  "description": "Keenetic Peak (KN-2710)"
+}
+### show/system (поля метрик)
+{
+  "hostname": "Keenetic-4188",
+  "domainname": "WORKGROUP",
+  "cpuload": 3,
+  "memory": "160380/524288",
+  "swap": "0/939452",
+  "memtotal": 524288,
+  "memfree": 131068,
+  "membuffers": 65600,
+  "memcache": 167240,
+  "swaptotal": 939452,
+  "swapfree": 939452,
+  "uptime": "537271",
+  "conntotal": 32768,
+  "connfree": 32515
+}
+### show/dns-proxy (первые 900)
+{
+  "proxy-status": [
+    {
+      "proxy-name": "System",
+      "proxy-config": "rpc_port = 54321\nrpc_ttl = 10000\nrpc_wait = 10000\ntimeout = 7000\nproceed = 500\nstat_file = /var/ndnproxymain.stat\nstat_time = 10000\nrr_port = 40901\ndns_server = 127.0.0.1:40500 . # 94.140.15.15@dns.adguard-dns.com\ndns_server = 127.0.0.1:40501 . # 1.1.1.1@cloudflare-dns.com\ndns_server = 127.0.0.1:40502 . # 94.140.14.14@dns.adguard-dns.com\ndns_server = 127.0.0.1:40508 . # https://cloudflare-dns.com/dns-query@dnsm\ndns_server = 127.0.0.1:40509 . # https://dns.quad9.net/dns-query@dnsm\ndns_server = 127.0.0.1:40510 . # https://dns.adguard-dns.com/dns-query@dnsm\nstatic_a = my.keenetic.net 78.47.125.180 1\nstatic_aaaa = my.keenetic.net 2001:2:7847:1251:feee:ed78:4712:5180 1\nrpc_const = on\nstatic_a = cd594e5b62814ce69d45fe88.netcraze.io 78.47.125.180 1\nstatic_aaaa = cd594e5b62814ce69d45fe88.netcraze.i
+### syslog template (первая строка router.log)
+1782641032	info	Keenetic-4188	ndm	Core::Syslog: server 192.168.6.1: added. 
+### conntrack proc
+254
+32768
+### loadavg
+1.12 1.15 1.16 1/196 3138

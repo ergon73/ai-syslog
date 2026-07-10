@@ -1,0 +1,17 @@
+### процессы наших демонов
+ 3513 root      3372 S    /opt/bin/sh /opt/etc/observer/actiond.sh
+15337 root      3372 S    /opt/bin/sh /opt/etc/observer/richsend.sh
+28776 root     14988 S    {syslog-ng} supervising syslog-ng
+28777 root      160m S    syslog-ng
+31646 root     1232m S    picoclaw gateway
+### init-скрипты
+/opt/etc/init.d/S96actiond
+/opt/etc/init.d/S97tgrich
+/opt/etc/init.d/S99picoclaw
+### cron-задания наблюдателя
+*/3 * * * * root /opt/etc/observer/batch.sh
+0 8 * * * root /opt/etc/observer/digest.sh
+### счётчики наблюдателя
+lines=2566 kept=396 llm=31 tg=7
+### offset vs size
+offset=25040044 size=25040220
