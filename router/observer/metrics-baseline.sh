@@ -21,23 +21,23 @@ awk -F'\t' -v alpha=0.2 -v blf="$BL" '
   BEGIN{ n=split("cpu:3 mem:4 conn:5 load:6 wan:7", arr, " ") }
   # различаем файлы по имени (FNR==NR ломается на пустом базлайне)
   FILENAME==blf{ k=$1 SUBSEP $2; bn[k]=$3; bmean[k]=$4; bmad[k]=$5; seen[k]=1; next }
-  # сэмплы: колонка 2 = слот-час
+  # сэмплы: колонка 2 = слот-час. Копим sum и sumsq для реального разброса.
   {
     for(i=1;i<=n;i++){ split(arr[i], kv, ":"); name=kv[1]; col=kv[2];
-      k=name SUBSEP $2; sum[k]+=$col; cnt[k]++ }
+      k=name SUBSEP $2; sum[k]+=$col; sumsq[k]+=$col*$col; cnt[k]++ }
   }
   END{
     for(k in cnt){
-      avg=sum[k]/cnt[k]
+      c=cnt[k]; avg=sum[k]/c
+      var=sumsq[k]/c - avg*avg; if(var<0)var=0; sd=sqrt(var)   # реальный разброс за час
       if(k in bmean && seen[k]){
-        dev=avg-bmean[k]; ad=(dev<0?-dev:dev)
         nmean=bmean[k]+alpha*(avg-bmean[k])
-        nmad =bmad[k] +alpha*(ad-bmad[k]); if(nmad<1)nmad=1
+        nspr =bmad[k] +alpha*(sd -bmad[k]); if(nspr<1)nspr=1
         nn=bn[k]+1; if(nn>999)nn=999
       } else {
-        nmean=avg; nmad=(avg/5>1?avg/5:1); nn=1
+        nmean=avg; nspr=(sd>1?sd:1); nn=1   # первичная норма: реальный mean и разброс из 12 замеров
       }
-      bmean[k]=nmean; bmad[k]=nmad; bn[k]=nn; keep[k]=1
+      bmean[k]=nmean; bmad[k]=nspr; bn[k]=nn; keep[k]=1
     }
     # сохранить и слоты, по которым в этот час не было сэмплов
     for(k in bmean) if(!(k in keep)) keep[k]=1
