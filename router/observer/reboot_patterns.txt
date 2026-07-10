@@ -1,0 +1,34 @@
+# Послезагрузочный шторм: события, ожидаемые при подъёме роутера.
+# Гасятся из РЕАЛТАЙМ-алертов ТОЛЬКО в окне REBOOT_WINDOW после ребута
+# (в дайджест всё равно попадают). Вне окна — обрабатываются как обычно,
+# поэтому реальные проблемы после стабилизации не теряются.
+# Применяется к "PROGRAM<TAB>MSG" (ERE, без учёта регистра).
+
+# WireGuard поднимает туннели заново
+wireguard: .* (no route to|handshake for peer)
+Wireguard::Interface:
+EndpointTracker:
+
+# DNS-прокси и DoT/DoH перезапускаются, резолверы ещё недоступны
+Dns::Secure::Tools: unable to obtain
+Dns::Manager:
+DoH .* proxy .* unexpectedly stopped
+too many failed requests, try to reload
+Operation timed out after .* bytes received
+Connection timed out after
+
+# Поднятие интерфейсов при загрузке — ПО ТЕКСТУ события, не по имени компонента
+# (иначе поймаем реальные сигналы из того же Network::Interface::Mtk::WifiMonitor,
+# например "MIC differs" — попытку подбора Wi-Fi). Эти фразы бывают только при up.
+interface( "[^"]*")? is (up|global)
+adding default route
+changed ".*" layer state
+# Перезапуск служб ядра
+Core::Server: started Session
+Core::Session: client disconnected
+Core::System::StartupConfig:
+Http::(Nginx::Config|Manager):
+
+# UPnP и планировщик стартуют
+upnp.*(shutting down|Listening|HTTP)
+Started cron

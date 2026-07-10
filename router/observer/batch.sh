@@ -51,8 +51,9 @@ lines=$((lines+nlines))
 
 # --- уровень 0: drop -------------------------------------------------------
 # шаблоны без комментариев и пустых строк (пустой шаблон в grep -f матчит всё)
-grep -v '^#' "$DIR/drop_patterns.txt"   | grep -v '^[[:space:]]*$' > "$STATE/drop.re"
-grep -v '^#' "$DIR/boring_patterns.txt" | grep -v '^[[:space:]]*$' > "$STATE/boring.re"
+grep -v '^#' "$DIR/drop_patterns.txt"    | grep -v '^[[:space:]]*$' > "$STATE/drop.re"
+grep -v '^#' "$DIR/boring_patterns.txt"  | grep -v '^[[:space:]]*$' > "$STATE/boring.re"
+grep -v '^#' "$DIR/reboot_patterns.txt"  | grep -v '^[[:space:]]*$' > "$STATE/reboot.re" 2>/dev/null
 
 # формат строки лога: UNIXTIME \t LEVEL \t HOST \t PROGRAM \t MSG
 cut -f4,5 "$STATE/chunk.lines" \
@@ -81,6 +82,26 @@ cut -f2- "$STATE/agg" | grep -viEn -f "$STATE/boring.re" | cut -d: -f1 \
     > "$STATE/int.idx" || true
 awk 'NR==FNR {keep[$1]=1; next} FNR in keep' \
     "$STATE/int.idx" "$STATE/agg" > "$STATE/interesting"
+
+# --- послезагрузочный шторм: в окне после ребута гасим ожидаемые boot-события.
+# uptime берём из RCI; в дайджест эти строки уже попали (day.acc), теряем только
+# реалтайм-спам. Вне окна reboot.re не применяется — реальные сбои не пропадут.
+upt=$(curl -s --max-time 5 http://localhost:79/rci/show/system 2>/dev/null | jq -r '.uptime // empty' 2>/dev/null)
+case "$upt" in ''|*[!0-9]*) upt="" ;; esac
+if [ -n "$upt" ] && [ "$upt" -lt "${REBOOT_WINDOW:-600}" ]; then
+    nb=$(date +%s); boot_ts=$((nb - upt))
+    lb=$(cat "$STATE/last_boot" 2>/dev/null); [ -n "$lb" ] || lb=0
+    dd=$((boot_ts - lb)); [ "$dd" -lt 0 ] && dd=$((-dd))
+    if [ "$dd" -gt 120 ]; then                       # новый ребут — объявить один раз
+        echo "$boot_ts" > "$STATE/last_boot"
+        tg_notify "🔄 Роутер перезагрузился ~$((upt/60)) мин назад. Идёт восстановление — временные ошибки WireGuard, DNS и сетевых интерфейсов в ближайшие минуты ожидаемы и вмешательства не требуют."
+        log "обнаружен ребут (uptime ${upt}s), boot-шторм подавляется ${REBOOT_WINDOW:-600}s"
+    fi
+    if [ -s "$STATE/reboot.re" ]; then
+        grep -viE -f "$STATE/reboot.re" "$STATE/interesting" > "$STATE/interesting.f" 2>/dev/null \
+            && mv "$STATE/interesting.f" "$STATE/interesting"
+    fi
+fi
 
 # --- дедуп алертов: событие, уже показанное владельцу за окно охлаждения,
 # повторно не алертится (в day.acc и дайджест оно уже попало).
