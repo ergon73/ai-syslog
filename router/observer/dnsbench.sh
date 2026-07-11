@@ -28,18 +28,33 @@ echo
 
 printf "%-14s %-4s | %-4s | %4s | %7s\n" "Сервер" "прот" "конф" "усп%" "ср.мс"
 echo "-------------------------------------------------"
-echo "$CANDIDATES" | while IFS="|" read L M S MARK; do
+
+# Кандидаты меряются ПАРАЛЛЕЛЬНО (свой фоновый процесс на каждого):
+# последовательный прогон занимал ~20 с, параллельный — ~4-6 с, что позволяет
+# агенту получать результат за один ход (опросом файла), без «спроси ещё раз».
+TDIR=$(mktemp -d /tmp/dnsb.XXXXXX)
+i=0
+# без пайпа: while в пайпе = подоболочка, wait не увидел бы фоновые процессы
+for line in $CANDIDATES; do
+  IFS="|"; set -- $line; unset IFS
+  L=$1; M=$2; S=$3; MARK=$4
   [ -z "$L" ] && continue
-  if echo "$CFG" | grep -q "$MARK"; then inuse="+"; else inuse="-"; fi
-  ok=0; tot=0; sm=0; r=0
-  while [ $r -lt $ROUNDS ]; do
-    for d in $DOMAINS; do
-      tot=$((tot+1))
-      [ "$M" = dot ] && o=$(dig +tls +timeout=$TIMEOUT +tries=1 @$S $d A 2>/dev/null) || o=$(dig +https +timeout=$TIMEOUT +tries=1 @$S $d A 2>/dev/null)
-      echo "$o" | grep -q "status: NOERROR" && { ok=$((ok+1)); q=$(echo "$o"|sed -n "s/.*Query time: \([0-9]*\).*/\1/p"); sm=$((sm+${q:-0})); }
+  i=$((i+1))
+  (
+    if echo "$CFG" | grep -q "$MARK"; then inuse="+"; else inuse="-"; fi
+    ok=0; tot=0; sm=0; r=0
+    while [ $r -lt $ROUNDS ]; do
+      for d in $DOMAINS; do
+        tot=$((tot+1))
+        [ "$M" = dot ] && o=$(dig +tls +timeout=$TIMEOUT +tries=1 @$S $d A 2>/dev/null) || o=$(dig +https +timeout=$TIMEOUT +tries=1 @$S $d A 2>/dev/null)
+        echo "$o" | grep -q "status: NOERROR" && { ok=$((ok+1)); q=$(echo "$o"|sed -n "s/.*Query time: \([0-9]*\).*/\1/p"); sm=$((sm+${q:-0})); }
+      done
+      r=$((r+1))
     done
-    r=$((r+1))
-  done
-  pct=$((ok*100/tot)); [ $ok -gt 0 ] && a=$((sm/ok)) || a=0
-  printf "%-14s %-4s | %-4s | %3d%% | %6dms\n" "$L" "$M" "$inuse" "$pct" "$a"
+    pct=$((ok*100/tot)); [ $ok -gt 0 ] && a=$((sm/ok)) || a=0
+    printf "%-14s %-4s | %-4s | %3d%% | %6dms\n" "$L" "$M" "$inuse" "$pct" "$a" > "$TDIR/$(printf %02d $i).row"
+  ) &
 done
+wait
+cat "$TDIR"/*.row 2>/dev/null
+rm -rf "$TDIR"
