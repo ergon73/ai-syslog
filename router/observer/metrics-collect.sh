@@ -44,6 +44,7 @@ printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
 # --- снимок для агента ---
 {
     echo "# Метрики нагрузки — $(date '+%F %T %Z') (слот часа: $hour)"
+    echo "unixtime_now=$now"
     echo "cpu_pct=$cpu"
     echo "mem_pct=$memp   (использовано $((used/1024)) из $((total/1024)) МиБ)"
     echo "conn_active=$conn   (из $ctot максимум)"
