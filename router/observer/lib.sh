@@ -79,6 +79,23 @@ llm_ask() {
     return 1
 }
 
+# Rich-сообщение (Bot API 10.1 sendRichMessage): markdown с таблицами и
+# заголовками. При неудаче — fallback в обычный tg_send.
+tg_send_rich() {
+    _md=$1
+    jq -n --arg cid "$TG_CHAT_ID" --arg md "$_md" \
+        '{chat_id:($cid|tonumber), rich_message:{markdown:$md}}' \
+        > "$STATE_DIR/rich_out.json" 2>/dev/null || { tg_send "$_md"; return; }
+    for _if in "" $TG_IFACES; do
+        [ -n "$_if" ] && _io="--interface $_if" || _io=""
+        _resp=$(curl -sS --max-time 20 $_io -H "Content-Type: application/json" \
+            -d @"$STATE_DIR/rich_out.json" \
+            "https://api.telegram.org/bot$TG_TOKEN/sendRichMessage" 2>/dev/null)
+        printf '%s' "$_resp" | grep -q '"ok":true' && return 0
+    done
+    tg_send "$_md"
+}
+
 # Отправка в Telegram: прямо -> WG-интерфейсы, второй круг с кэшем IP.
 tg_send() {
     _text=$1

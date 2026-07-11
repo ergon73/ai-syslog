@@ -55,37 +55,44 @@ printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
 BL="$DIR/state/baseline.tsv"
 [ -f "$BL" ] || exit 0
 
+AN_TXT=$TMP/anom.txt; AN_KEY=$TMP/anom.key
+: > "$AN_TXT"; : > "$AN_KEY"
+
 check() {   # имя значение мин-абс-порог
     m=$1; v=$2; floor=$3
     row=$(awk -F'\t' -v m="$m" -v s="$hour" '$1==m&&$2==s{print $3" "$4" "$5}' "$BL")
     [ -n "$row" ] || return
     set -- $row; n=$1; mean=$2; mad=$3
-    [ "$n" -ge 2 ] || return               # базлайн прогрет: слот прошёл ≥2 суток (разброс реальный с 1-го дня)
+    [ "$n" -ge 2 ] || return               # базлайн прогрет: слот прошёл ≥2 суток
+    # нижняя граница разброса: 10% от нормы — молодой базлайн даёт нереально
+    # узкий σ (напр. ±6 при норме 234), из-за чего утренний рост = «аномалия»
+    f10=$((mean/10)); [ "$mad" -lt "$f10" ] && mad=$f10
     [ "$mad" -ge 1 ] || mad=1
     dev=$((v-mean)); [ "$dev" -lt 0 ] && dev=$((-dev))
-    # аномалия: отклонение больше 4×MAD И больше абсолютного порога метрики
+    # аномалия: отклонение больше 4×разброса И больше абсолютного порога
     if [ "$dev" -gt $((4*mad)) ] && [ "$dev" -gt "$floor" ]; then
         if [ "$v" -gt "$mean" ]; then d="выше"; else d="ниже"; fi
-        echo "$m: сейчас $v, $d нормы (~$mean ±$mad для этого часа)"
+        echo "$m: сейчас $v, $d нормы (~$mean ±$mad для этого часа)" >> "$AN_TXT"
+        echo "$m:$d" >> "$AN_KEY"          # отпечаток БЕЗ значения: метрика+направление
     fi
 }
 
-anom=$(
-    check cpu  "$cpu"   20
-    check mem  "$memp"  15
-    check conn "$conn"  50
-    check wan  "$kbps"  256
-)
-[ -n "$anom" ] || exit 0
+check cpu  "$cpu"   20
+check mem  "$memp"  15
+check conn "$conn"  50
+check wan  "$kbps"  256
+[ -s "$AN_TXT" ] || exit 0
 
-# троттлинг: одна и та же аномалия не чаще ALERT_COOLDOWN
+# троттлинг: тот же набор аномалий (метрика+направление+час) не чаще cooldown —
+# значение в отпечаток НЕ входит, иначе каждый рост значения = «новый» алерт
 HIST=$DIR/state/metrics.alert.hist
 touch "$HIST"
 cool=${ALERT_COOLDOWN:-10800}
 awk -v now="$now" -v cd="$cool" '$2>=now-cd' "$HIST" > "$HIST.new" && mv "$HIST.new" "$HIST"
-key=$(printf '%s' "$hour:$anom" | md5sum | cut -c1-12)
+key=$(printf '%s' "$hour:$(cat "$AN_KEY")" | md5sum | cut -c1-12)
 grep -q "^$key " "$HIST" && exit 0
 echo "$key $now" >> "$HIST"
+anom=$(cat "$AN_TXT")
 
 . "$DIR/lib.sh"
 tg_send "📈 Отклонение нагрузки роутера от нормы:

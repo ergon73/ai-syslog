@@ -22,6 +22,10 @@ making OFFER of
 upnp_event_process_notify
 remove subscriber
 
+# "last message repeated N times" — служебная свёртка syslog, сама по себе
+# не несёт информации (относится к предыдущей строке)
+Core::Syslog: last message repeated
+
 # Самозапись наблюдателя: cron логирует каждый запуск заданий,
 # rc.func — старты сервисов picoclaw (иначе LLM будят собственные следы)
 ^cron

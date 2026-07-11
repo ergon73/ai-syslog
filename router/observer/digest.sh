@@ -24,9 +24,11 @@ else
     digest=$(llm_ask "$MODEL_DIGEST" "$DIR/prompt_digest.txt" "$STATE/day.top" 0.3)
 
     if [ -n "$digest" ]; then
-        tg_send "📊 Сводка за сутки:
+        tg_send_rich "## 📊 Сводка за сутки
+
 $digest
 
+---
 $hb"
     else
         tg_send "$hb

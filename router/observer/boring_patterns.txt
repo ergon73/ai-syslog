@@ -33,6 +33,10 @@ Dns::Manager: updating DNS-over-(TLS|HTTPS)
 # Продление собственной DHCP-аренды на аплинке
 received ACK for IP
 
+# DHCPINFORM-обмен (Windows-клиенты уточняют параметры) — шум
+DHCPINFORM received
+sending INFORM to
+
 # Сброс conntrack при смене состояния интерфейсов (следствие флапов VPN)
 Netfilter::Util::Conntrack: flushed
 
