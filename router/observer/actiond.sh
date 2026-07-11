@@ -32,15 +32,20 @@ run_action() {
             if [ -z "$pat" ]; then
                 echo "# loggrep: пустой или невалидный запрос" > "$RES/loggrep.txt"
             else
+                tmpm="$RES/.lg.$$"
+                awk -F'\t' -v s="$since" -v p="$pat" \
+                    '$1 >= s && index($0, p) {
+                        print strftime("%Y-%m-%d %H:%M", $1) " | " $0 }' \
+                    /opt/var/log/router.log > "$tmpm" 2>/dev/null
+                nm=$(wc -l < "$tmpm")
                 {
                     echo "# Поиск: \"$pat\" за последние ${hrs}ч — $(date '+%F %T %Z')"
+                    echo "# ВСЕГО СОВПАДЕНИЙ: $nm (показаны последние 200; для счёта бери ЭТО число)"
                     echo "# Каждая строка начинается с ГОТОВОГО местного времени (MSK)."
                     # strftime здесь, а не в LLM: модель ошибается в конвертации epoch
-                    awk -F'\t' -v s="$since" -v p="$pat" \
-                        '$1 >= s && index($0, p) {
-                            print strftime("%Y-%m-%d %H:%M", $1) " | " $0 }' \
-                        /opt/var/log/router.log | tail -200
+                    tail -200 "$tmpm"
                 } > "$RES/loggrep.txt.tmp" 2>&1
+                rm -f "$tmpm"
                 mv "$RES/loggrep.txt.tmp" "$RES/loggrep.txt"
             fi
             ;;

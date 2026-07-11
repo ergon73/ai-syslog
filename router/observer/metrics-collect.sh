@@ -45,6 +45,8 @@ printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
 {
     echo "# Метрики нагрузки — $(date '+%F %T %Z') (слот часа: $hour)"
     echo "unixtime_now=$now"
+    up_s=$(cut -d. -f1 /proc/uptime)
+    echo "boot_time=$(awk -v b=$((now-up_s)) 'BEGIN{print strftime("%F %H:%M MSK", b)}')   (последняя загрузка роутера, uptime $((up_s/3600)) ч)"
     echo "cpu_pct=$cpu"
     echo "mem_pct=$memp   (использовано $((used/1024)) из $((total/1024)) МиБ)"
     echo "conn_active=$conn   (из $ctot максимум)"

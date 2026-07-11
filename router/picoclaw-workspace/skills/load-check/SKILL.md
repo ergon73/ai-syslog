@@ -10,7 +10,7 @@ description: "Нагрузка роутера сейчас и сравнение
 
 ## Данные
 
-1. `state/metrics.now` — ТЕКУЩИЕ метрики (обновляются каждые 5 минут):
+1. `/opt/etc/observer/state/metrics.now` — ТЕКУЩИЕ метрики (обновляются каждые 5 минут):
    - cpu_pct — загрузка CPU, %
    - mem_pct — занятая RAM, %
    - conn_active — активные соединения (NAT-сессии); базовая метрика роутера
@@ -18,7 +18,7 @@ description: "Нагрузка роутера сейчас и сравнение
    - wan_kbps — скорость на аплинке, КиБ/с
    В шапке файла — «слот часа: N» (час суток 0-23).
 
-2. `state/baseline.tsv` — НОРМА по часам суток. Строки:
+2. `/opt/etc/observer/state/baseline.tsv` — НОРМА по часам суток. Строки:
    METRIC<TAB>SLOT<TAB>N<TAB>MEAN<TAB>SPREAD
    (METRIC: cpu mem conn load wan; SLOT: час 0-23; MEAN — типичное значение,
    SPREAD — типичный разброс σ, N — сколько СУТОК норма этого часа набиралась).

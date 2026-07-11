@@ -1,9 +1,10 @@
 #!/bin/sh
 # Автозапуск picoclaw gateway (Telegram-интерфейс агента) через Entware rc.func.
 # Эталонная копия; на роутере: /opt/etc/init.d/S99picoclaw (chmod 755).
-# ENABLED=no до тех пор, пока не заполнены токены (apply-keys.sh включает).
+# При свежей установке ставить ENABLED=no до заполнения токенов
+# (apply-keys.sh включает сам). На работающей системе — yes.
 
-ENABLED=no
+ENABLED=yes
 PROCS=picoclaw
 ARGS="gateway"
 PREARGS=""
@@ -11,5 +12,9 @@ DESC="picoclaw gateway"
 PATH=/opt/sbin:/opt/bin:/opt/usr/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
 export HOME=/opt/root
+# Go-процесс без таймзоны живёт в UTC — агент отвечал «06:48» вместо «09:48».
+# Go читает TZ только при наличии zoneinfo (пакет zoneinfo-europe, путь через ZONEINFO).
+export TZ=Europe/Moscow
+export ZONEINFO=/opt/share/zoneinfo
 
 . /opt/etc/init.d/rc.func
