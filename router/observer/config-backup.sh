@@ -39,8 +39,9 @@ fi
 stamp=$(date '+%Y-%m-%d_%H%M')
 dated="$BK/config-$stamp.cfg"
 if [ -f "$latest" ]; then
-    add=$(diff "$latest" "$new" 2>/dev/null | grep -c '^>')
-    del=$(diff "$latest" "$new" 2>/dev/null | grep -c '^<')
+    # busybox diff = unified-формат (+/-), не классический (</>)
+    add=$(diff "$latest" "$new" 2>/dev/null | grep -Ec '^\+[^+]|^\+$')
+    del=$(diff "$latest" "$new" 2>/dev/null | grep -Ec '^-[^-]|^-$')
     note="Конфигурация роутера изменилась (+$add/−$del строк относительно прошлой копии)."
 else
     note="Первый бэкап конфигурации роутера сохранён."

@@ -12,9 +12,52 @@ ensure_tg_route
 . "$STATE/stats" 2>/dev/null || { lines=0; kept=0; llm=0; tg=0; }
 hb="🤖 Наблюдатель жив. За сутки: строк $lines, после фильтра $kept, вызовов LLM $llm, уведомлений $tg."
 
+# --- изменения конфигурации за сутки (раздел появляется ТОЛЬКО при изменении).
+# Дифф: состояние «сутки назад» -> новейшая копия; несколько правок за день
+# схлопываются в суммарную. Детерминированно, без LLM.
+BK=${BK:-/opt/backups/config}
+cfg_note=""
+# отбор по МЕТКЕ В ИМЕНИ файла (config-ГГГГ-ММ-ДД_ЧЧММ.cfg), не по mtime:
+# имена сортируются лексикографически и не зависят от прихотей ФС/копирований
+cutname="config-$(awk -v t=$(( $(date +%s) - 86400 )) 'BEGIN{print strftime("%Y-%m-%d_%H%M", t)}').cfg"
+newest=$(ls "$BK"/config-*.cfg 2>/dev/null | sort | tail -1)
+newer_than_cut=0
+if [ -n "$newest" ]; then
+    top=$(printf '%s\n%s\n' "$(basename "$newest")" "$cutname" | sort | tail -1)
+    [ "$top" = "$(basename "$newest")" ] && [ "$(basename "$newest")" != "$cutname" ] && newer_than_cut=1
+fi
+if [ "$newer_than_cut" = 1 ]; then
+    # база: последняя копия ДО начала суток (= состояние сутки назад);
+    # если все копии моложе суток, но их >=2 — берём самую раннюю из них
+    base=$(ls "$BK"/config-*.cfg 2>/dev/null | sort | awk -F/ -v c="$cutname" '$NF <= c {keep=$0} END{print keep}')
+    if [ -z "$base" ]; then
+        ncf=$(ls "$BK"/config-*.cfg 2>/dev/null | wc -l)
+        [ "$ncf" -ge 2 ] && base=$(ls "$BK"/config-*.cfg | sort | head -1)
+    fi
+    [ "$base" = "$newest" ] && base=""
+    if [ -n "$base" ]; then
+        # busybox diff = unified-формат: добавленное "+", удалённое "-"
+        d=$(diff "$base" "$newest" 2>/dev/null | grep -E '^[+-]' \
+            | grep -vE '^(\+\+\+|---)' | grep -v '! \$\$\$' | head -40)
+        nl=$(printf '%s\n' "$d" | grep -c . )
+        cfg_note="
+
+## ⚙️ Конфигурация менялась за сутки
+Суммарный дифф («+» добавлено, «-» удалено; $nl строк$( [ "$nl" -ge 40 ] && echo ", показаны первые 40")):
+\`\`\`
+$d
+\`\`\`"
+    else
+        cfg_note="
+
+## ⚙️ Конфигурация
+Создан первый бэкап конфигурации ($(basename "$newest"))."
+    fi
+fi
+
 if [ ! -s "$STATE/day.acc" ]; then
-    tg_send "$hb
-За сутки событий после фильтрации не было."
+    tg_send_rich "$hb
+За сутки событий после фильтрации не было.${cfg_note}"
 else
     # пересуммировать одинаковые строки за сутки, топ-50
     awk -F'\t' '{c[$2"\t"$3]+=$1} END{for (k in c) print c[k]"\t"k}' \
@@ -26,7 +69,7 @@ else
     if [ -n "$digest" ]; then
         tg_send_rich "## 📊 Сводка за сутки
 
-$digest
+$digest${cfg_note}
 
 ---
 $hb"
