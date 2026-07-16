@@ -84,15 +84,34 @@ check cpu  "$cpu"   20
 check mem  "$memp"  15
 check conn "$conn"  50
 check wan  "$kbps"  256
+
+# фильтр стойкости: алертим метрику, только если она аномальна ДВА замера
+# подряд (10 минут). Одиночные всплески (короткая закачка, наш же дайджест
+# в 08:00 грузит CPU) — не повод будить владельца.
+PREV=$TMP/anom.prev
+prev_keys=$(cat "$PREV" 2>/dev/null)
+cp "$AN_KEY" "$PREV" 2>/dev/null || : > "$PREV"
+if [ -s "$AN_TXT" ]; then
+    : > "$AN_TXT.f"; : > "$AN_KEY.f"
+    n=0
+    while IFS= read -r k; do
+        n=$((n+1))
+        if printf '%s\n' "$prev_keys" | grep -qx "$k"; then
+            sed -n "${n}p" "$AN_TXT" >> "$AN_TXT.f"
+            echo "$k" >> "$AN_KEY.f"
+        fi
+    done < "$AN_KEY"
+    mv "$AN_TXT.f" "$AN_TXT"; mv "$AN_KEY.f" "$AN_KEY"
+fi
 [ -s "$AN_TXT" ] || exit 0
 
-# троттлинг: тот же набор аномалий (метрика+направление+час) не чаще cooldown —
-# значение в отпечаток НЕ входит, иначе каждый рост значения = «новый» алерт
+# троттлинг: та же аномалия (метрика+направление, БЕЗ часа и БЕЗ значения)
+# не чаще cooldown — затяжное отклонение не должно алертить каждый час
 HIST=$DIR/state/metrics.alert.hist
 touch "$HIST"
 cool=${ALERT_COOLDOWN:-10800}
 awk -v now="$now" -v cd="$cool" '$2>=now-cd' "$HIST" > "$HIST.new" && mv "$HIST.new" "$HIST"
-key=$(printf '%s' "$hour:$(cat "$AN_KEY")" | md5sum | cut -c1-12)
+key=$(md5sum < "$AN_KEY" | cut -c1-12)
 grep -q "^$key " "$HIST" && exit 0
 echo "$key $now" >> "$HIST"
 anom=$(cat "$AN_TXT")
