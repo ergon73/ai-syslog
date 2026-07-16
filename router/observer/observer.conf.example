@@ -8,7 +8,11 @@ OLLAMA_API_BASE="https://ollama.com/v1"
 
 # Модель реального времени (классификация батчей) и модель дайджеста.
 # Точные теги проверить: curl -H "Authorization: Bearer $KEY" https://ollama.com/v1/models
-MODEL_REALTIME="qwen3.5:397b"
+# kimi-k2.7-code выбрана по эмпирическому тесту владельца: умнее и быстрее
+# qwen3.5 (~3 c на классификацию), чистый русский, строгий JSON, + Vision
+# (задел на приём скриншотов в чат). Дайджест — deepseek-v4-flash (большой
+# контекст, дёшев, 1 раз в сутки).
+MODEL_REALTIME="kimi-k2.7-code"
 MODEL_DIGEST="deepseek-v4-flash"
 
 # WG-интерфейсы для доставки в Telegram (api.telegram.org блокируется
