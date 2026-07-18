@@ -23,8 +23,10 @@ memp=$((used*100/total))
 conn=$((ctot-cfree))
 load1=$(awk '{print int($1*100)}' /proc/loadavg)
 
-# WAN-скорость по аплинку apclii0 (дельта байт /proc/net/dev), счёт в awk (64-бит)
-netline=$(grep apclii0 /proc/net/dev)
+# WAN-скорость по аплинку (дельта байт /proc/net/dev), счёт в awk (64-бит).
+# Интерфейс задаётся в observer.conf (WAN_IF) — у разных роутеров разный:
+# Peak = apclii0 (Wi-Fi-клиент), домашний с проводным WAN = eth3/… (см. ip route).
+netline=$(grep "${WAN_IF:-apclii0}" /proc/net/dev | head -1)
 rx=$(echo "$netline" | awk '{print $2}'); tx=$(echo "$netline" | awk '{print $10}')
 [ -n "$rx" ] || rx=0; [ -n "$tx" ] || tx=0
 pf=$TMP/prev_net

@@ -15,8 +15,14 @@ OLLAMA_API_BASE="https://ollama.com/v1"
 MODEL_REALTIME="kimi-k2.7-code"
 MODEL_DIGEST="deepseek-v4-flash"
 
-# WG-интерфейсы для доставки в Telegram (api.telegram.org блокируется
-# провайдером для трафика самого роутера; порядок = приоритет)
+# Интерфейс WAN-аплинка для метрики скорости (ip route get 8.8.8.8 → dev X).
+# Peak: apclii0 (Wi-Fi-клиент). Домашний с проводным WAN: обычно eth3 или ISP-iface.
+WAN_IF="apclii0"
+
+# WG-интерфейсы для доставки в Telegram, если api.telegram.org НЕДОСТУПЕН
+# напрямую (провайдер яхт-клуба блокирует; дома обычно доступен — тогда
+# оставить пустым: TG_IFACES=""). Порядок = приоритет. Проверка на месте:
+#   curl -s -o /dev/null -w '%{http_code}' https://api.telegram.org
 TG_IFACES="nwg2 nwg0 nwg1"
 
 # Цепочка fallback LLM (пустой ключ = ступень выключена).
