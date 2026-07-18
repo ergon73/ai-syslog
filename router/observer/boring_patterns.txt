@@ -40,6 +40,13 @@ sending INFORM to
 # Сброс conntrack при смене состояния интерфейсов (следствие флапов VPN)
 Netfilter::Util::Conntrack: flushed
 
+# UPnP-проброс портов через VPN-туннель (Policy0 -> WireguardN): рутинная
+# работа P2P/torrent-приложения, привязанного к VPN. Сотни строк/сутки,
+# бот алертил на каждую пачку. Тренд остаётся виден в дайджесте; реальный
+# сигнал (новый target-IP) при желании смотрится там. Прочие UPnP-события
+# (не redirect/forward rule added) в этот фильтр НЕ входят.
+UPnP::Service: .* (redirect|forward) rule added
+
 # dropbear: успешные логины с других хостов увидит дайджест;
 # неудачные попытки (bad password, exit before auth) сюда НЕ входят — они важные
 Child connection from
